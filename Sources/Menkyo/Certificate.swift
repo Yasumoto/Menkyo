@@ -2,13 +2,13 @@
 //  Certificate.swift
 //  CertificateViewer
 //
-//  Created by Joseph Mehdi Smith on 8/1/17.
+//  Created by Joe Smith on 8/1/17.
 //
 //
 
 import Foundation
 
-enum SubjectAttributes: String {
+public enum SubjectAttributes: String {
     case commonName = "CN"
     case country = "C"
     case organization = "O"
@@ -20,16 +20,16 @@ enum SubjectAttributes: String {
     case uid = "UID"
 }
 
-struct Certificate {
-    let subjectSummary: String?
-    let issuer: [SubjectAttributes:String]?
-    let issuerAltName: [String]?
-    let subjectName: [SubjectAttributes:String]?
-    let alternateNames: [String]?
-    let notBefore: Date?
-    let notAfter: Date?
+public struct Certificate {
+    public let subjectSummary: String?
+    public let issuer: [SubjectAttributes:String]?
+    public let issuerAltName: [String]?
+    public let subjectName: [SubjectAttributes:String]?
+    public let alternateNames: [String]?
+    public let notBefore: Date?
+    public let notAfter: Date?
 
-    var valid: Bool? {
+    public var valid: Bool? {
         var valid = false
         let now = Date()
         if let notAfter = self.notAfter {

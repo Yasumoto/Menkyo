@@ -15,7 +15,7 @@ import CTLS
 /**
  * Find all certificates in a dictionary and use OpenSSL to parse them
  */
-func enumerateCertificates(baseDirectory: String) -> [String:Certificate] {
+public func enumerateCertificates(baseDirectory: String) -> [String:Certificate] {
     var infos = [String: Certificate]()
     let enumerator = FileManager.default.enumerator(atPath: baseDirectory)
     while true {
