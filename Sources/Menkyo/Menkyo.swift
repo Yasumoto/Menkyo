@@ -49,7 +49,7 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
  * Based on
  * https://kahdev.wordpress.com/2008/11/23/a-certificates-subject-issuer-and-its-keyusage/
  */
-func parseX509Name(name: UnsafeMutablePointer<X509_NAME>) -> [SubjectAttributes:String] {
+func parseX509Name(name: UnsafeMutablePointer<X509_NAME>, debug: Bool = false) -> [SubjectAttributes:String] {
     var attributes = [SubjectAttributes: String]()
     if let io = BIO_new(BIO_s_mem()) {
         X509_NAME_print_ex(io, name, 0, UInt(XN_FLAG_SEP_MULTILINE))
@@ -65,10 +65,14 @@ func parseX509Name(name: UnsafeMutablePointer<X509_NAME>) -> [SubjectAttributes:
                     if let attribute = SubjectAttributes(rawValue: field) {
                         attributes[attribute] = value
                     } else {
-                        print("Unknown attribute on cert: \(element)")
+                        if debug {
+                            print("Unknown attribute on cert: \(element)")
+                        }
                     }
                 } else {
-                    print("Unable to pase subjectName: \(element)")
+                    if debug {
+                        print("Unable to pase subjectName: \(element)")
+                    }
                 }
 
             }
