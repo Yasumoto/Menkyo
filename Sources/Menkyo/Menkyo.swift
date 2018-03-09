@@ -17,6 +17,9 @@ import CTLS
  */
 public func readCertificateFile(_ fullPath: String) -> Certificate? {
     if let certContents = readCert(pathName: fullPath) {
+        defer {
+            X509_free(certContents)
+        }
         let subjectName = retrieveSubjectName(cert: certContents)
         let sans = retrieveSubjectAltNames(cert: certContents)
         let issuerAlternativeName = retrieveIssuerAlternativeName(cert: certContents)
@@ -62,9 +65,15 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
 func parseX509Name(name: UnsafeMutablePointer<X509_NAME>, debug: Bool = false) -> [SubjectAttributes:String] {
     var attributes = [SubjectAttributes: String]()
     if let io = BIO_new(BIO_s_mem()) {
+        defer {
+            BIO_free(io)
+        }
         X509_NAME_print_ex(io, name, 0, UInt(XN_FLAG_SEP_MULTILINE))
         var stringPointer: UnsafeMutableRawPointer? = nil
         _ = BIO_ctrl(io, BIO_CTRL_INFO, 0, &stringPointer)
+        defer {
+            free(stringPointer)
+        }
         if let pointer = stringPointer?.assumingMemoryBound(to: CChar.self) {
             let name = String(cString: pointer)
             for element in name.components(separatedBy: "\n") {
@@ -101,6 +110,9 @@ func parseExpiryDates(cert: UnsafeMutablePointer<X509>) -> (Date?, Date?) {
     func readDate(asnTime: UnsafePointer<ASN1_TIME>) -> Date? {
         var stringPointer: UnsafeMutableRawPointer? = nil
         if let bufferIO = BIO_new(BIO_s_mem()) {
+            defer {
+                BIO_free(bufferIO)
+            }
             if asnTime.pointee.type == V_ASN1_UTCTIME {
                 _ = ASN1_TIME_print(bufferIO, asnTime)
                 _ = BIO_ctrl(bufferIO, BIO_CTRL_INFO, 0, &stringPointer)
@@ -145,6 +157,9 @@ func parseExtensionNames(cert: UnsafeMutablePointer<X509>, nid: Int32, nameType:
     var extensionNames = [String]()
     if let rawNames = X509_get_ext_d2i(cert, nid, nil, nil) {
         let names = rawNames.assumingMemoryBound(to: _STACK.self)
+        defer {
+            sk_free(names)
+        }
         let nameCount = sk_num(names) // Know how many elements are present in the cert
 
         var count = 0
@@ -197,6 +212,9 @@ func retrieveSubjectAltNames(cert: UnsafeMutablePointer<X509>) -> [String] {
     return parseExtensionNames(cert: cert, nid: NID_subject_alt_name, nameType: GEN_DNS)
 }
 
+/**
+ * Note that callers are responsible for freeing the x509 pointer
+ */
 func readCert(pathName: String) -> UnsafeMutablePointer<X509>? {
     do {
         let fileHandle = try FileHandle(forReadingFrom: URL(fileURLWithPath: pathName))
