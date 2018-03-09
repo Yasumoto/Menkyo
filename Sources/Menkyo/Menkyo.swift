@@ -65,14 +65,13 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
 func parseX509Name(name: UnsafeMutablePointer<X509_NAME>, debug: Bool = false) -> [SubjectAttributes:String] {
     var attributes = [SubjectAttributes: String]()
     if let io = BIO_new(BIO_s_mem()) {
-        defer {
-            BIO_free(io)
-        }
         X509_NAME_print_ex(io, name, 0, UInt(XN_FLAG_SEP_MULTILINE))
         var stringPointer: UnsafeMutableRawPointer? = nil
         _ = BIO_ctrl(io, BIO_CTRL_INFO, 0, &stringPointer)
         defer {
-            free(stringPointer)
+            if let pointer = stringPointer {
+                free(pointer)
+            }
         }
         if let pointer = stringPointer?.assumingMemoryBound(to: CChar.self) {
             let name = String(cString: pointer)
