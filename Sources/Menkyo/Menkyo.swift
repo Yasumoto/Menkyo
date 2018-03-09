@@ -13,7 +13,10 @@ import Foundation
 import CTLS
 
 /**
- * Given a path to a file on disk, parse it for certificate information
+ Given a path to a file on disk, parse it for certificate information
+
+ - parameters:
+ - fullPath: Location of a certificate file to read
  */
 public func readCertificateFile(_ fullPath: String) -> Certificate? {
     if let certContents = readCert(pathName: fullPath) {
@@ -37,7 +40,10 @@ public func readCertificateFile(_ fullPath: String) -> Certificate? {
 }
 
 /**
- * Find all certificates in a dictionary and use OpenSSL to parse them
+ Find all certificates in a dictionary and use OpenSSL to parse them
+
+ - parameters:
+ - baseDirectory: Folder to iterate through looking for cert files
  */
 public func enumerateCertificates(baseDirectory: String) -> [String:Certificate] {
     var infos = [String: Certificate]()
@@ -58,9 +64,14 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
 }
 
 /**
- *
- * Based on
- * https://kahdev.wordpress.com/2008/11/23/a-certificates-subject-issuer-and-its-keyusage/
+
+ Based on
+ https://kahdev.wordpress.com/2008/11/23/a-certificates-subject-issuer-and-its-keyusage/
+ Function details from [`X509_NAME_print_ex(3)`](https://webcache.googleusercontent.com/search?q=cache:qOoOIzf7FCkJ:https://wiki.openssl.org/index.php/Manual:X509_NAME_print_ex(3))
+
+ - parameters
+ - name: Field of the certificate to pull out
+ - debug: Print out details
  */
 func parseX509Name(name: UnsafeMutablePointer<X509_NAME>, debug: Bool = false) -> [SubjectAttributes:String] {
     var attributes = [SubjectAttributes: String]()
