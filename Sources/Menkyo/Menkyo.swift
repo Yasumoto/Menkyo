@@ -13,6 +13,27 @@ import Foundation
 import CTLS
 
 /**
+ * Given a path to a file on disk, parse it for certificate information
+ */
+public func readCertificateFile(_ fullPath: String) -> Certificate? {
+    if let certContents = readCert(pathName: fullPath) {
+        let subjectName = retrieveSubjectName(cert: certContents)
+        let sans = retrieveSubjectAltNames(cert: certContents)
+        let issuerAlternativeName = retrieveIssuerAlternativeName(cert: certContents)
+        let issuer = retrieveIssuerName(cert: certContents)
+        let (notBefore, notAfter) = parseExpiryDates(cert: certContents)
+        return Certificate(subjectSummary: "",
+                           issuer: issuer,
+                           issuerAltName: issuerAlternativeName,
+                           subjectName: subjectName,
+                           alternateNames: sans,
+                           notBefore: notBefore,
+                           notAfter: notAfter)
+    }
+    return nil
+}
+
+/**
  * Find all certificates in a dictionary and use OpenSSL to parse them
  */
 public func enumerateCertificates(baseDirectory: String) -> [String:Certificate] {
@@ -22,19 +43,8 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
         if let fileName = enumerator?.nextObject() as? String {
             let fullPath = "\(baseDirectory)/\(fileName)"
             if fullPath.contains(".crt") || fullPath.contains(".pem") {
-                if let certContents = readCert(pathName: fullPath) {
-                    let subjectName = retrieveSubjectName(cert: certContents)
-                    let sans = retrieveSubjectAltNames(cert: certContents)
-                    let issuerAlternativeName = retrieveIssuerAlternativeName(cert: certContents)
-                    let issuer = retrieveIssuerName(cert: certContents)
-                    let (notBefore, notAfter) = parseExpiryDates(cert: certContents)
-                    infos[fullPath] = Certificate(subjectSummary: "",
-                                                  issuer: issuer,
-                                                  issuerAltName: issuerAlternativeName,
-                                                  subjectName: subjectName,
-                                                  alternateNames: sans,
-                                                  notBefore: notBefore,
-                                                  notAfter: notAfter)
+                if let certificate = readCertificateFile(fullPath) {
+                    infos[fullPath] = certificate
                 }
             }
         } else {
