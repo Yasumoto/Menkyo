@@ -64,35 +64,27 @@ public func enumerateCertificates(baseDirectory: String) -> [String:Certificate]
  */
 func parseX509Name(name: UnsafeMutablePointer<X509_NAME>, debug: Bool = false) -> [SubjectAttributes:String] {
     var attributes = [SubjectAttributes: String]()
-    if let io = BIO_new(BIO_s_mem()) {
-        X509_NAME_print_ex(io, name, 0, UInt(XN_FLAG_SEP_MULTILINE))
-        var stringPointer: UnsafeMutableRawPointer? = nil
-        _ = BIO_ctrl(io, BIO_CTRL_INFO, 0, &stringPointer)
+    if let buf = X509_NAME_oneline(name, nil, 0) {
         defer {
-            if let pointer = stringPointer {
-                free(pointer)
-            }
+            free(buf)
         }
-        if let pointer = stringPointer?.assumingMemoryBound(to: CChar.self) {
-            let name = String(cString: pointer)
-            for element in name.components(separatedBy: "\n") {
-                let components = element.components(separatedBy: "=")
-                if components.count == 2 {
-                    let field = components[0]
-                    let value = components[1]
-                    if let attribute = SubjectAttributes(rawValue: field) {
-                        attributes[attribute] = value
-                    } else {
-                        if debug {
-                            print("Unknown attribute on cert: \(element)")
-                        }
-                    }
+        let name = String(cString: buf)
+        for element in name.components(separatedBy: "/") {
+            let components = element.components(separatedBy: "=")
+            if components.count == 2 {
+                let field = components[0]
+                let value = components[1]
+                if let attribute = SubjectAttributes(rawValue: field) {
+                    attributes[attribute] = value
                 } else {
                     if debug {
-                        print("Unable to pase subjectName: \(element)")
+                        print("Unknown attribute on cert: \(element)")
                     }
                 }
-
+            } else {
+                if debug {
+                    print("Unable to pase subjectName: \(element)")
+                }
             }
         }
     }
